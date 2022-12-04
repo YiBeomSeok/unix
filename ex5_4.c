@@ -17,6 +17,6 @@ int main(void) {
   }
 
   for (i = 0; i < 999999; i++) {
-    times(mytms);
+    times(&mytms);
   }
 }

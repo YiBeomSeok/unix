@@ -17,16 +17,26 @@ int main() {
   int nread;
   pid_t pid;
   int rbuf[RBUFSIZE];
+  int wbuf[1024];
+  int i;
+
+  for(i = 0; i < 1024; i++) {
+    wbuf[i] = i;
+  }
+
+  if((fd = open("integer", O_CREAT | O_RDWR, 0644)) == -1){
+    perror("open failed");
+    exit(1);
+  }
+  write(fd, wbuf, sizeof(wbuf));
+  close(fd);
+
 #ifdef TIMES
   struct timeval stime, etime;
   int time_result;
 #endif
 
-  printf("sizeof(buf) = %d\n", (int)sizeof(rbuf));
-  if((fd = open("integer", O_CREAT | O_RDWR, 0644)) == -1){
-    perror("open failed");
-    exit(1);
-  }
+  fd = open("integer", O_RDONLY, 0644);
 
   switch(pid = fork()) {
     
@@ -35,34 +45,41 @@ int main() {
       break;
 
     case 0:
+
 #ifdef TIMES
       gettimeofday(&stime, NULL);
 #endif
+
       printf("Child read\n");
-#ifdef TIMES
-      gettimeofday(&etime, NULL);
-      time_result = etime.tv_usec - stime.tv_usec;
-#endif
       readIntFile(fd, 512, 1024);
+
 #ifdef TIMES
+    gettimeofday(&etime, NULL);
+    time_result = etime.tv_usec - stime.tv_usec;
     printf("child time\n");
     printf("%d %d %d\n", (int)(etime.tv_usec), (int)stime.tv_usec, (int)time_result);
 #endif
+
       close(fd);
       break;
     
     default:
       wait((int *)0);
       printf("Parent read\n");
+
 #ifdef TIMES
-      gettimeofday(&etime, NULL);
-      time_result = etime.tv_usec - stime.tv_usec;
+      gettimeofday(&stime, NULL);
 #endif
+
       readIntFile(fd, 0, 512);
+
 #ifdef TIMES
+    gettimeofday(&etime, NULL);
+    time_result = etime.tv_usec - stime.tv_usec;
     printf("parent time\n");
     printf("%d %d %d\n", (int)etime.tv_usec, (int)stime.tv_usec, (int)time_result);
 #endif
+
       close(fd);
       break;
   }
